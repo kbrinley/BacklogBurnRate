@@ -1,6 +1,8 @@
 # BacklogBurnRate
 Rally CustomHTML code to calculate a Team's Backlog Burn Rate
 
+![alt text](Screenshot.png "Backlog Burn Rate")
+
 To install
 * Find or create a new Page in Rally
 * Click the Gear and select "Add App..."
