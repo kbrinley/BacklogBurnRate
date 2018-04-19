@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+   <meta name="Name" content="Backlog Burn Rate"/>
+   <title>Backlog Burn Rate</title>
+   <script type="text/javascript" src="/apps/1.26/sdk.js"></script>
+   <script>
+     function writeResultsToHTML(element, data) {
+         var tag = document.getElementById(element);
+         tag.innerHTML = '<p>' + data + '</p>';
+     }
+
+     function calculateBacklogSize(stories) {
+         var runningBacklogSizeTotal = 0;
+         var story = "";
+         for (i=0 ; i < stories.length ; i++) {
+             story = stories[i];
+             runningBacklogSizeTotal += story.PlanEstimate;
+         }
+
+         return runningBacklogSizeTotal;
+     }
+
+     function calculateAverageVelocity(iterations) {
+         var runningVelocityTotal = 0;
+         var numberOfSprints = 0;
+         var iteration = "";
+         for (j=0 ; j < iterations.length ; j++) {
+             iteration = iterations[j];
+             if (iteration.Resources > 0) {
+                 runningVelocityTotal += iteration.Resources;
+                 numberOfSprints++;
+             }
+         }
+
+         var averageVelocity = 0;
+         if (numberOfSprints > 0) {
+             averageVelocity = runningVelocityTotal / numberOfSprints;
+         }
+         return averageVelocity;
+     }
+
+     function calculateBurnRate(runningBacklogSizeTotal, averageVelocity) {
+         var backlogBurnRate = 0;
+         if (averageVelocity > 0) {
+             backlogBurnRate = runningBacklogSizeTotal / averageVelocity;
+         }
+         return backlogBurnRate;
+     }
+
+     function displayResults(runningBacklogSizeTotal, averageVelocity, backlogBurnRate) {
+         writeResultsToHTML("backlogSize", runningBacklogSizeTotal);
+             
+         writeResultsToHTML("teamVelocity", averageVelocity);
+             
+         writeResultsToHTML("backlogBurnRate", backlogBurnRate);
+     }
+
+     function fetchResults() {
+         var calculateResults = function(results) {
+             var runningBacklogSizeTotal = calculateBacklogSize(results.stories);
+             
+             var averageVelocity = calculateAverageVelocity(results.iterations);
+
+             var backlogBurnRate = calculateBurnRate(runningBacklogSizeTotal, averageVelocity);
+
+             displayResults(runningBacklogSizeTotal, averageVelocity, backlogBurnRate);
+       };
+
+         var queryConfig = [];
+         queryConfig[0] = { 
+             type : 'HierarchicalRequirement',
+             key : 'stories',
+             query: '((ScheduleState < In-Progress) AND (Release.Name != Cemetery))',
+             fetch: 'FormattedID,PlanEstimate'
+          };
+          queryConfig[1] = {
+             type : 'iteration',
+             key : 'iterations',
+             fetch : 'Resources'
+          }
+
+          var rallyDataSource = new rally.sdk.data.RallyDataSource('__WORKSPACE_OID__',
+                                                  '__PROJECT_OID__',
+                                                   '__PROJECT_SCOPING_UP__', 
+                                                  '__PROJECT_SCOPING_DOWN__'); 
+          rallyDataSource.findAll(queryConfig, calculateResults);
+     }
+
+     rally.addOnLoad(fetchResults);
+  </script>
+</head>
+<body>
+  <h2 id="appHeader">Fetches and calculates the Backlog Burn Rate</h2>
+  <h5>The Burn Rate is how many sprints worth of work the team has in their current backlog.</h5>
+  <div>Backlog (in Story Points): <b id="backlogSize"></b></div>
+  <div>Average Team Velocity: <b id="teamVelocity"></b></div>
+  <div>Backlog Burn Rate: <b id="backlogBurnRate"></b></div>
+</body>
+</html>
